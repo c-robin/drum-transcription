@@ -57,11 +57,9 @@ try:
 except:
     sys.exit('category must be one of these: %s' % str(list(taxonomies.keys())))
 
-# TODO add HMM classifier, configure SVM
-if clf == 'knn':
-    classifier = KNeighborsClassifier(n_neighbors=3)
-else:
-    classifier = SVC()
+classifiers = ['knn', 'svm']
+if clf not in classifiers:
+    sys.exit('classifier must be one of these: %s' % str(classifiers))
 
 features_, labels_ = extract_features()
 features = []
@@ -107,7 +105,15 @@ for l,count in counts:
     cover.append((l,count,float(cumul)/total))
 print('\n'.join(map(str, cover)))
 
-# TODO keep only enough classes for a 95% coverage of all combinations (to avoid under-represented classes)
+# Keep only enough classes for a 95% coverage (to avoid under-represented classes)
+keep = []
+for (l,c,p) in cover:
+    keep.append(l)
+    if p >= 0.95:
+        break
+if len(keep) >= 2:
+    features = [f for i,f in enumerate(features) if ','.join(labels[i]) in keep]
+    labels = [l for l in labels if ','.join(l) in keep]
 
 # Training and evaluation datasets definition
 features = np.array(features)
@@ -121,6 +127,16 @@ mean_ = mean(X_train)
 variance_ = variance(X_train, mean_)
 X_train = (X_train - mean_)/variance_
 X_test = (X_test - mean_)/variance_
+
+# TODO add HMM classifier, configure SVM
+if clf == 'knn':
+    classifier = KNeighborsClassifier(n_neighbors=3)
+elif clf == 'svm':
+    C = 2
+    d = X_train.shape[1]
+    delta = 1
+    gamma = 1.0/(2*d*delta**2)
+    classifier = SVC(C=C, gamma=gamma)
 
 # Training step
 classifier.fit(X_train, y_train)

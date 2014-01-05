@@ -27,27 +27,31 @@ class Segment():
         frames = np.fromstring(frames, 'Int16')
         self.frames = np.array(frames, dtype='float')
     def specgram(self):
-        lab.specgram(self.frames, Fs=self.file.getframerate(), scale_by_freq=True)
+        pylab.specgram(self.frames, Fs=self.file.getframerate(), scale_by_freq=True)
         plt.show()
     def plot(self):
         x_axis = [float(i) / 44100 for i in range(self.width)]
         plt.plot(x_axis, self.frames)
         plt.show()
     def features(self):
+        if len(self.frames) == 0:
+            print('banane')
+            return None
+
         fp = yaafe.FeaturePlan()
-        fp.addFeature('mfcc: MFCC CepsIgnoreFirstCoeff=0 blockSize=2048 stepSize=1024')
-        fp.addFeature('shape: SpectralShapeStatistics blockSize=2048 stepSize=1024')
+        #fp.loadFeaturePlan('features.txt')
+        fp.loadFeaturePlan('features_reduced.txt')
+
         df = fp.getDataFlow()
         engine = yaafe.Engine()
         engine.load(fp.getDataFlow())
-        feats = engine.processAudio(np.array([self.frames]))
-        mfcc = feats['mfcc']
-        shape = feats['shape']
+        feats_ = engine.processAudio(np.array([self.frames]))
+     
+        feats = dict()
+        for k, values in feats_.iteritems():
+            mean_ = mean(values)
+            variance_ = variance(values, mean_)
+            feats[k + '_mean'] = mean_
+            feats[k + '_variance'] = variance_
 
-        if not mfcc.any() or not shape.any():
-            return None
-       
-        mfcc = mean(mfcc)
-        shape = mean(shape)
-
-        return np.concatenate((mfcc, shape))
+        return np.concatenate((feats['mfcc_mean'], feats['spectral_shape_mean']))

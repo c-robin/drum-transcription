@@ -1,0 +1,14 @@
+energy: Energy blockSize=2048 stepSize=1024
+mfcc: MFCC CepsIgnoreFirstCoeff=0 blockSize=2048 stepSize=1024
+spectral_shape: SpectralShapeStatistics blockSize=2048 stepSize=1024
+zcr: ZCR blockSize=2048 stepSize=1024
+flatness: SpectralFlatness blockSize=2048 stepSize=1024
+sharpness: PerceptualSharpness blockSize=2048 stepSize=1024
+lpc: LPC LPCNbCoeffs=6 blockSize=2048 stepSize=1024
+envelope: EnvelopeShapeStatistics blockSize=32768 stepSize=16384
+rolloff: SpectralRolloff blockSize=2048 stepSize=1024
+temporal_shape: TemporalShapeStatistics blockSize=2048 stepSize=1024
+loudness: Loudness LMode=Relative blockSize=2048 stepSize=1024
+obsir: OBSIR blockSize=2048 stepSize=1024
+modulation: AmplitudeModulation blockSize=32768 stepSize=16384
+

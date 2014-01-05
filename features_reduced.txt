@@ -1,0 +1,3 @@
+mfcc: MFCC CepsIgnoreFirstCoeff=0 blockSize=2048 stepSize=1024
+spectral_shape: SpectralShapeStatistics blockSize=2048 stepSize=1024
+
