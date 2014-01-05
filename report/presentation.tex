@@ -1,0 +1,146 @@
+\documentclass{beamer}
+ 
+\usepackage[american]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{array}
+\usepackage{tikz}
+\usepackage{epstopdf}
+\usetheme{Copenhagen}
+%\usecolortheme{crane}
+\setbeamertemplate{navigation symbols}{}
+\title[Audiovisual recognition of drum sequences]{Audiovisual recognition of drum sequences}
+\author[A.~Bérard, C.~Robin]{Alexandre Bérard, Charles Robin}
+
+%\titlegraphic{
+%    \includegraphics[scale=0.1]{lmu2.jpg}\hspace*{1cm}~%
+%    \includegraphics[scale=0.4]{artigo_logo.png}
+%}
+\date{January 10th, 2014}
+
+\newcommand*\oldmacro{}%
+\let\oldmacro\insertshorttitle%
+\renewcommand*\insertshorttitle{%
+  \oldmacro\hfill%
+  \insertframenumber\,/\,\inserttotalframenumber}
+
+\begin{document}
+
+    \begin{frame}
+    \titlepage
+    \end{frame}
+
+    \section{Introduction}    
+    \begin{frame}
+        \frametitle{Introduction}
+        \emph{ENST-Drums}: \emph{30 Go} of drum audio and video sequences, played by three different drummers on their own drum kit.
+        \vspace*{0.5cm}
+       
+        Four types of sequence: \emph{hits}, \emph{phrases}, \emph{soli}, \emph{accompaniment}. All sequences are annoted, with the time of each stroke and the corresponding instrument.
+        \vspace*{0.5cm}
+
+        Possible instruments: snare drum, bass drum, cymbals (chinese ride, crash, splash, etc.), hi-hat, toms (low tom, mid tom, etc.)
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Exercise}
+        Different possible classification tasks:
+        \begin{itemize}
+            \item Recognize the drummer;
+            \item Recognize the tool used to hit (stick, brush, mallet);
+            \item The instrument that is hit (snare drum, bass drum, etc.);
+            \item Or a higher-level category of instrument (e.g. membranes versus plates).
+        \end{itemize}
+        We could use audio features, video features, or both of them.
+    \end{frame}
+    \begin{frame}
+        \frametitle{Our goal}
+        We tried three classification tasks: recognize the instrument type within three categories.
+        \begin{itemize}
+            \item \emph{Super-category}: membrane, plate
+            \item \emph{Basic-level}: bass drum, snare drum, tom, cymbal, hi-hat
+            \item \emph{Sub-category}: like \emph{basic-level}, but toms are subdivised into low tom, low mid tom, etc., cymbals into splash, ride and crash cymbals.
+        \end{itemize}
+    \end{frame}
+    \begin{frame}
+        \frametitle{Bibliography}
+        \footnotesize 
+        \nocite{*}
+        \bibliographystyle{plain}
+        \bibliography{presentation}
+        \normalsize
+    \end{frame}
+    \begin{frame}
+        \frametitle{Whole process}
+        \begin{enumerate}
+            \item Data selection
+            \item Data segmentation (extraction of strokes out of the sequences)
+            \item Features extraction (convert audio segments into vectors)
+            \item Normalization of the attributes
+            \item Training of a classifier (on the training data)
+            \item Evaluation of the classifier
+        \end{enumerate}
+    \end{frame}
+    
+    \begin{frame}
+        \frametitle{Data segmentation}
+        Audio records are sequences of strokes. We must extract those strokes. The first step is to detect the beginning of each stroke.
+        This process is called \emph{onset detection}. We use the time defined in the annotations as an oracle.
+        \vspace*{0.5cm}
+        
+        Then, we must define a segment size. It could be either a fixed window (e.g. 200 ms) or the whole audio sequence until the next stroke.
+    \end{frame}
+    \section{Feature extraction}
+    \begin{frame}
+        \frametitle{Feature selection}
+    \end{frame}
+    \begin{frame}
+        \frametitle{Chosen features}
+        As suggested by Gillet et al. in \cite{Gillet04}, we used the following features:
+        \begin{itemize}
+            \item Means of 13 MFCC coefficients (starting by $c_0$), using an analysis window of 50 ms and a 50\% overlap.
+            \item 4 spectral shape parameters: spectral centroïd, width, skewness and kurtosis; defined as \emph{SpectralShapeStatistics} in Yaafe.
+            \item Log-energy in 6 frequency bands (chosen accordingly to the frequency content of each instrument)
+        \end{itemize}
+
+    \end{frame}
+    \section{Classification}
+    \begin{frame}
+        \frametitle{Classification}
+        Herrera et al. use a k-NN, Gillet et al. prefer a SVM. We tried both of them.
+        \begin{center}
+        \begin{tabular}{|c|c|}
+            \hline
+            Category&Precision on hits\\
+            \hline
+            Super-category&98\%\\
+            \hline
+            Basic-level&91\%\\
+            \hline
+            Sub-category&83\%\\
+            \hline
+        \end{tabular}
+        \end{center}
+    \end{frame}
+
+%\begin{center}
+%\includegraphics[scale=0.3]{tagging.png}\hspace*{0.8cm}
+%\includegraphics[scale=0.4]{captcha.png}
+%\end{center}
+
+    \section{Conclusion}
+
+    \begin{frame}
+        \frametitle{Remarks}
+    \end{frame}
+   
+    \section{}
+    \begin{frame}
+        \frametitle{~}
+
+        \begin{center}
+            Thank you for listening.
+            \underline{Questions?}
+        \end{center}
+    \end{frame}
+\end{document}
