@@ -4,9 +4,8 @@ from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import cross_validation
 from data import extract_features
-from features import mean, variance
+from features import normalize
 from collections import defaultdict
-#from random import shuffle
 import numpy as np
 import sys
 
@@ -65,7 +64,7 @@ features_, labels_ = extract_features()
 features = []
 labels = []
 
-# Convert an instrument label into the corresponding category of the taxonomy
+# Convert an instrument label into the corresponding taxonomy category
 def get_category(label):
     for category_, labels in taxonomy.iteritems():
         if label in labels:
@@ -82,106 +81,62 @@ def get_categories(labels):
             categories.add(category_)
     return sorted(list(categories))
 
-# Convert the instrument labels, and keep only the values where the labels are covered by the taxonomy
+# Convert the instrument labels, and keep only the segments whose instruments are all covered by the taxonomy
 for i, feature in enumerate(features_):
     categories = get_categories(labels_[i])
     if categories is not None:
         features.append(feature)
         labels.append(categories)
 
-# Coverage statistics
-print('Statistics\n-----------')
-print('Total coverage of this taxonomy: %.1f%%' % (100.0*len(features)/len(features_)))
-print('\nCoverage of the different combinations:')
-combinations = defaultdict(int)
-for l in labels:
-    combinations[','.join(l)] += 1
-counts = sorted(list(combinations.iteritems()), cmp=lambda x,y: cmp(y[1], x[1]))
-total = sum([count for (_,count) in counts])
-cover = []
-cumul = 0
-for l,count in counts:
-    cumul += count
-    cover.append((l,count,float(cumul)/total))
-print('\n'.join(map(str, cover)))
-
-# Keep only enough classes for a 95% coverage (to avoid under-represented classes)
-keep = []
-for (l,c,p) in cover:
-    keep.append(l)
-    if p >= 0.95:
-        break
-if len(keep) >= 2:
-    features = [f for i,f in enumerate(features) if ','.join(labels[i]) in keep]
-    labels = [l for l in labels if ','.join(l) in keep]
-
-# Training and evaluation datasets definition
 features = np.array(features)
+features = normalize(features)
 labels = np.array(labels)
-X_train, X_test, y_train, y_test = cross_validation.train_test_split(features, labels, test_size=0.2)
-
-# TODO training & evaluation from different audio files/drummers
-
-# Normalization of the data
-mean_ = mean(X_train)
-variance_ = variance(X_train, mean_)
-X_train = (X_train - mean_)/variance_
-X_test = (X_test - mean_)/variance_
 
 # TODO add HMM classifier, configure SVM
 if clf == 'knn':
     classifier = KNeighborsClassifier(n_neighbors=3)
 elif clf == 'svm':
     C = 2
-    d = X_train.shape[1]
-    delta = 1
-    gamma = 1.0/(2*d*delta**2)
+    d = features.shape[1]
+    sigma = 1
+    gamma = 1.0/(2*d*sigma**2)
     classifier = SVC(C=C, gamma=gamma)
 
-# Training step
-classifier.fit(X_train, y_train)
+def score_func(y_true, y_pred):
+    counts = defaultdict(lambda: [0,0,0])
+    for i, truth in enumerate(y_true):
+        prediction = y_pred[i]
 
-# Evaluation step
-# For each instrument:
-# [Number of strokes predicted, number of strokes in the groundtruth, number of strokes correctly predicted]
-counts = defaultdict(lambda: [0,0,0])
+        for instr in prediction:
+            counts[instr][0] += 1
+            if instr in truth:
+                counts[instr][2] += 1
+        for instr in truth:
+            counts[instr][1] += 1
 
-for i, X in enumerate(X_test):
-    prediction = classifier.predict(X)[0]
-    truth = y_test[i]
+    scores = dict()
+    for instr, (n_predict, n_truth, n_correct) in counts.iteritems():
+        precision = float(n_correct)/n_predict
+        recall = float(n_correct)/n_truth
+        if precision == 0 or recall == 0:
+            f_measure = 0
+        else:
+            f_measure = 2*precision*recall/(precision + recall)
+        scores[instr] = np.array([precision, recall, f_measure])
+    return scores
 
-    for instr in prediction:
-        counts[instr][0] += 1
+scores = cross_validation.cross_val_score(classifier,features,labels,score_func,cv=10)
 
-        if instr in truth:
-            counts[instr][2] += 1
+# Compute the means of the scores over all test folds
+sum_scores = dict()
+for scores_ in scores:
+    for instr, values in scores_.iteritems():
+        values /= len(scores)
+        if instr not in sum_scores:
+            sum_scores[instr] = values
+        else:
+            sum_scores[instr] += values
 
-    for instr in truth:
-        counts[instr][1] += 1
-
-print('\nEvaluation\n----------')
-scores = dict()
-for instr, (n_predict, n_truth, n_correct) in counts.iteritems():
-    precision = float(n_correct)/n_predict
-    recall = float(n_correct)/n_truth
-    
-    if precision == 0 or recall == 0:
-        f_measure = 0
-    else:
-        f_measure = 2*precision*recall/(precision + recall)
-    
-    scores[instr] = (precision, recall, f_measure)
-
+for instr, (precision, recall, f_measure) in sum_scores.iteritems():
     print('%s: precision=%.3f, recall=%.3f, F-measure=%.3f' % (instr, precision, recall, f_measure))
-
-"""
-if cross_val:
-    score = cross_validation.cross_val_score(classifier, features, labels, cv=10)
-    score = mean(score)
-else:
-    X_train, X_test, y_train, y_test = cross_validation.train_test_split(features, labels, test_size=0.2)
-    classifier.fit(X_train, y_train)
-    score = classifier.score(X_test, y_test)
-#print(score)
-"""
 
