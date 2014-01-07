@@ -7,15 +7,10 @@
 \usepackage{tikz}
 \usepackage{epstopdf}
 \usetheme{Copenhagen}
-%\usecolortheme{crane}
 \setbeamertemplate{navigation symbols}{}
 \title[Audiovisual recognition of drum sequences]{Audiovisual recognition of drum sequences}
 \author[A.~Bérard, C.~Robin]{Alexandre Bérard, Charles Robin}
 
-%\titlegraphic{
-%    \includegraphics[scale=0.1]{lmu2.jpg}\hspace*{1cm}~%
-%    \includegraphics[scale=0.4]{artigo_logo.png}
-%}
 \date{January 10th, 2014}
 
 \newcommand*\oldmacro{}%
@@ -108,30 +103,136 @@
     \begin{frame}
         \frametitle{Classification}
         Herrera et al. use a k-NN, Gillet et al. prefer a SVM. We tried both of them.
+        Evaluation protocol: for each instrument, we measure its precision and recall. We used cross-validation, with 10 folds.
+
         \begin{center}
-        \begin{tabular}{|c|c|}
-            \hline
-            Category&Precision on hits\\
-            \hline
-            Super-category&98\%\\
-            \hline
-            Basic-level&91\%\\
-            \hline
-            Sub-category&83\%\\
-            \hline
-        \end{tabular}
+
+3 SVM (C=2, $\sigma$=1, 10 folds)
+\begin{tabular}{|c|c|c|c|}
+\hline
+Instrument&Precision&Recall&F-measure\\
+\hline
+Bass drum&90.6\%&76.1\%&82.7\%\\
+\hline
+Snare drum&92.8\%&82.6\%&87.4\%\\
+\hline
+Hi-hat&84.7\%&94.1\%&89.2\%\\
+\hline
+Average&89.4\%&84.3\%&86.4\%\\
+\hline
+\end{tabular}
+
+%SVM (C=2, $\sigma$=1, 10 folds)
+%\begin{tabular}{|c|c|c|c|}
+%\hline
+%Instrument&Precision&Recall&F-measure\\
+%\hline
+%Bass drum&91.4\%&74.1\%&81.9\%\\
+%\hline
+%Snare drum&93.0\%&79.6\%&85.8\%\\
+%\hline
+%Hi-hat&84.7\%&93.2\%&88.8\%\\
+%\hline
+%Average&89.7\%&82.3\%&85.5\%\\
+%\hline
+%\end{tabular}
+%
+%K-NN (k=3, 10 folds)
+%\begin{tabular}{|c|c|c|c|}
+%\hline
+%Instrument&Precision&Recall&F-measure\\
+%\hline
+%Bass drum&75.3\%&84.7\%&79.7\%\\
+%\hline
+%Snare drum&87.0\%&83.5\%&85.2\%\\
+%\hline
+%Hi-hat&83.8\%&89.5\%&86.6\%\\
+%\hline
+%Average&82.0\%&85.9\%&83.8\%\\
+%\hline
+%\end{tabular}
+%
+%Basic-level, SVM (C=2, $\sigma$=1, 10 folds)
+%\begin{tabular}{|c|c|c|c|}
+%\hline
+%Instrument&Precision&Recall&F-measure\\
+%\hline
+%Cymbal&87.5\%&50.9\%&64.3\%\\
+%\hline
+%Bass drum&89.5\%&73.4\%&80.7\%\\
+%\hline
+%Snare drum&90.6\%&81.6\%&85.9\%\\
+%\hline
+%Tom&90.8\%&33.0\%&48.3\%\\
+%\hline
+%Hi-hat&79.9\%&89.9\%&84.6\%\\
+%\hline
+%Average&87.7\%&65.8\%&72.7\%\\
+%\hline
+%\end{tabular}
+%
+%Basic-level, 3 SVM (C=2, $\sigma$=1, 10 folds)
+%\begin{tabular}{|c|c|c|c|}
+%\hline
+%Instrument&Precision&Recall&F-measure\\
+%\hline
+%Cymbal&85.3\%&61.2\%&71.2\%\\
+%\hline
+%Bass drum&88.3\%&77.5\%&82.5\%\\
+%\hline
+%Snare drum&91.3\%&82.8\%&86.8\%\\
+%\hline
+%Tom&88.1\%&40.7\%&55.4\%\\
+%\hline
+%Hi-hat&85.0\%&87.4\%&86.2\%\\
+%\hline
+%Average&87.6\%&69.9\%&76.4\%\\
+%\hline
+%\end{tabular}
+%
+%Sub-category, SVM (C=2, $\sigma$=1, 10 folds)
+%\begin{tabular}{|c|c|c|c|}
+%\hline
+%Instrument&Precision&Recall&F-measure\\
+%\hline
+%Splash cymbal&80.0\%&0.0\%&0.0\%\\
+%\hline
+%Low tom&74.7\%&18.7\%&29.5\%\\
+%\hline
+%Low mid tom&60.0\%&27.7\%&35.5\%\\
+%\hline
+%Other cymbal&88.8\%&37.0\%&51.9\%\\
+%\hline
+%Ride cymbal&83.3\%&42.8\%&56.4\%\\
+%\hline
+%Closed hi-hat&69.8\%&85.7\%&76.9\%\\
+%\hline
+%Open hi-hat&82.5\%&61.0\%&70.1\%\\
+%\hline
+%Mid tom&69.1\%&21.8\%&32.9\%\\
+%\hline
+%Bass drum&89.8\%&71.6\%&79.6\%\\
+%\hline
+%Snare drum&88.8\%&83.7\%&86.2\%\\
+%\hline
+%Lowest tom&97.5\%&25.1\%&37.8\%\\
+%\hline
+%Crash cymbal&91.7\%&57.5\%&70.4\%\\
+%\hline
+%Average&81.3\%&44.4\%&52.3\%\\
+%\hline
+%\end{tabular}
+
         \end{center}
     \end{frame}
-
-%\begin{center}
-%\includegraphics[scale=0.3]{tagging.png}\hspace*{0.8cm}
-%\includegraphics[scale=0.4]{captcha.png}
-%\end{center}
 
     \section{Conclusion}
 
     \begin{frame}
         \frametitle{Remarks}
+        Good results, because we skipped the \emph{onset detection} step by using an oracle.
+
+        There is room for improvement: feature selection, parameters tuning, etc. We didn't evaluate our system on noisy data.
     \end{frame}
    
     \section{}
