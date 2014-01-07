@@ -35,7 +35,6 @@ class Segment():
         plt.show()
     def features(self):
         if len(self.frames) == 0:
-            print('banane')
             return None
 
         fp = yaafe.FeaturePlan()

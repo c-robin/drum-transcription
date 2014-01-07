@@ -112,7 +112,7 @@ if clf == '3svm':
         instruments = labels[i]
         for instr in taxonomy.keys():
             x_values[instr].append(feature)
-            y_values[instr].append(1 if instr in instruments else 0)
+            y_values[instr].append(int(instr in instruments))
 
     def score_func(y_true, y_pred):
         return (precision_score(y_true,y_pred),
