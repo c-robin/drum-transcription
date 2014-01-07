@@ -1,8 +1,12 @@
-from os import path, listdir
+from os import path, listdir, getuid
 from features import Segment
 from random import shuffle
+from pwd import getpwuid
 
-root = '/media/windows/Users/eske/ENST-Drums-Audio'
+if 'zycho' in getpwuid(getuid())[4]:
+    root = '/home/zycho/workspace/FAV/ENST-Drums-Audio'
+else:
+    root = '/media/windows/Users/eske/ENST-Drums-Audio'
 drummers = ['drummer_1', 'drummer_2', 'drummer_3']
 audio_subdir = 'audio/overhead_L'
 txt_subdir = 'annotation'
