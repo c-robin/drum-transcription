@@ -13,6 +13,7 @@ from numpy.linalg import norm
 import numpy as np
 import sys
 from pprint import pprint
+import time
 
 
 # Tree levels of taxonomies, with 95% coverage
@@ -127,7 +128,7 @@ if clf == '3svm':
         X = np.array(x_values[instr])
         Y = np.array(y_values[instr])
         
-        #MERDE DE CHARLES
+        #MERDE DE CHARLES+ESKE
         N = len(Y)
         Np = sum(Y)
         Nm = len(Y)-Np
@@ -136,27 +137,35 @@ if clf == '3svm':
         Mp = lambda s: sum(x_s(X[i],s) for i in range(N) if Y[i]==1)/Np
         Mm = lambda s: sum(x_s(X[i],s) for i in range(N) if Y[i]==0)/Nm
         M = lambda s: sum(x_s(X[i],s) for i in range(N))/N
-        r_s = lambda s: (Np/N*norm(Mp(S)-M(s))**2 + Nm/N*norm(Mm(s)-M(s))**2)/((sum(norm(x_s(X[i],s)-Mp(s))**2  for i in range(N) if Y[i]==1)/Np)+(sum(norm(x_s(X[i],s)-Mm(s))**2  for i in range(N) if Y[i]==0)/Nm))
+        r_s = lambda s: (Np/N*norm(Mp(s)-M(s))**2 + Nm/N*norm(Mm(s)-M(s))**2)/((sum(norm(x_s(X[i],s)-Mp(s))**2  for i in range(N) if Y[i]==1)/Np)+(sum(norm(x_s(X[i],s)-Mm(s))**2  for i in range(N) if Y[i]==0)/Nm))
         #ALGO IRMFSP
         #calcul des d features les plus interessante
         d=4
         def IRMFSP(X,Y,d):
             S = set([])
-            C = range(Y)
-            i = 0
-            while i<d:
-                s_i = np.argmax(map(r_s,C))
-                r_i = r_s(s_i)
+            C = range(len(X[0]))
+            j = 0
+            base = time.clock()
+            while j<d:
+                print 'j'+str(j)+' '+str(time.clock()-base)
+                s_i = np.argmax(map(r_s, [set([c]) for c in C]))
+                r_i = r_s(set([s_i]))
                 S.add(s_i)
                 if s_i in C: C.remove(s_i)
                 else: sys.exit('IRMFSP : erreur à C prive de s_i')
                 for c in C:
-                   i=i 
-                i=i+1
-            return S,d
+                    print 'c'+str(c)+' '+str(time.clock()-base)
+                    x_c = np.array([xi[c] for xi in X])
+                    x_si = np.array([xi[s_i] for xi in X])
+                    new_x_c = x_c - np.dot(x_c, x_si)/np.dot(x_si, x_si)*x_si
+                    for i in range(len(X)):
+                        print 'i'+str(i)+' '+str(time.clock()-base)
+                        X[i][c] = new_x_c[i] 
+                j=j+1
+            return S
+        pprint(IRMFSP(X,Y,d))
 
-
-        #FIN MERDE DE CHARLES
+        #FIN MERDE DE CHARLES+ESKE
         d = X.shape[1]
         C, sigma = svm_params
         gamma = 1.0/(2*d*sigma**2)
