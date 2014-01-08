@@ -5,16 +5,11 @@ from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import cross_validation
 from sklearn.metrics import recall_score, precision_score, f1_score
-from sklearn.hmm import GaussianHMM
 from data import extract_features
-from features import normalize, mean
+from features import normalize, mean, IRMFSP
 from collections import defaultdict
-from numpy.linalg import norm
 import numpy as np
 import sys
-from pprint import pprint
-import time
-
 
 # Tree levels of taxonomies, with 95% coverage
 super_category = {
@@ -63,7 +58,7 @@ try:
 except:
     sys.exit('category must be one of these: %s' % str(list(taxonomies.keys())))
 
-classifiers = ['knn', 'svm', '3svm','hmm']
+classifiers = ['knn', 'svm', '3svm']
 if clf not in classifiers:
     sys.exit('classifier must be one of these: %s' % str(classifiers))
 
@@ -127,66 +122,18 @@ if clf == '3svm':
     for instr in x_values:
         X = np.array(x_values[instr])
         Y = np.array(y_values[instr])
-        
-        N = len(Y)
-        Np = sum(Y)
-        Nm = len(Y) - Np
 
-        x_s = lambda x,s: np.array([xi for (i,xi) in enumerate(x) if i in s])
-        Mp = lambda s: sum(x_s(X[i],s) for i in range(N) if Y[i]==1)/Np
-        Mm = lambda s: sum(x_s(X[i],s) for i in range(N) if Y[i]==0)/Nm
-        M = lambda s: sum(x_s(X[i],s) for i in range(N))/N
-        
-        def r_s(s):
-            Ms, Mps, Mms = M(s), Mp(s), Mm(s)
-            num = float(Np)/N * norm(Mps - Ms)**2 + float(Nm)/N * norm(Mms - Ms)**2
-            denom1 = sum(norm(x_s(X[i], s) - Mps)**2  for i in range(N) if Y[i]==1)
-            denom2 = sum(norm(x_s(X[i], s) - Mms)**2  for i in range(N) if Y[i]==0)
-            denom = denom1/Np + denom2/Nm
-            return num/denom
+        attributes = IRMFSP(X, Y, d=4)
+        print(attributes)
 
-        # IRMFSP algorithm
-        # Computes the d most interesting attributes
-        d = 4
-        def IRMFSP(X, Y, d):
-            S = set([])
-            C = range(len(X[0]))
-            j = 0
-            base = time.clock()
-            while j < d:
-                s_i = C[np.argmax(map(r_s, [set([c]) for c in C]))]
-                r_i = r_s(set([s_i]))
-                S.add(s_i)
-                C.remove(s_i)
-                for c in C:
-                    x_c = np.array([xi[c] for xi in X])
-                    x_si = np.array([xi[s_i] for xi in X])
-                    new_x_c = x_c - np.dot(x_c, x_si)/np.dot(x_si, x_si)*x_si
-                    for i in range(len(X)):
-                        X[i][c] = new_x_c[i] 
-                j += 1
-            return S
-        pprint(IRMFSP(X,Y,d))
-
-        #FIN MERDE DE CHARLES+ESKE
         d = X.shape[1]
         C, sigma = svm_params
-        gamma = 1.0/(2*d*sigma**2)
+        gamma = 1.0 / (2 * d * sigma**2)
         classifier = SVC(C=C, gamma=gamma)
 
         scores = cross_validation.cross_val_score(classifier, X, Y, score_func, cv=10)
-        sum_scores[instr] = 100*mean(scores)
-elif clf == 'hmm':
-    pprint.pprint(features)
-    pprint.pprint(labels)
-    X = np.column_stack([features,labels])
-    classifier = GaussianHMM(len(taxonomy), covariance_type="diag", n_iter=1000)
-    classifier.fit(features)
+        sum_scores[instr] = 100 * mean(scores)
 
-    def score_func(y_true, y_pred):
-        return  classifier.predict(y_true)
-
-    scores = cross_validation.cross_val_score(classifier, features, labels, score_func, cv=10)
 else:
     if clf == 'knn':
         classifier = KNeighborsClassifier(n_neighbors=3)
