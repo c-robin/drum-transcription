@@ -128,40 +128,43 @@ if clf == '3svm':
         X = np.array(x_values[instr])
         Y = np.array(y_values[instr])
         
-        #MERDE DE CHARLES+ESKE
         N = len(Y)
         Np = sum(Y)
-        Nm = len(Y)-Np
+        Nm = len(Y) - Np
 
         x_s = lambda x,s: np.array([xi for (i,xi) in enumerate(x) if i in s])
         Mp = lambda s: sum(x_s(X[i],s) for i in range(N) if Y[i]==1)/Np
         Mm = lambda s: sum(x_s(X[i],s) for i in range(N) if Y[i]==0)/Nm
         M = lambda s: sum(x_s(X[i],s) for i in range(N))/N
-        r_s = lambda s: (Np/N*norm(Mp(s)-M(s))**2 + Nm/N*norm(Mm(s)-M(s))**2)/((sum(norm(x_s(X[i],s)-Mp(s))**2  for i in range(N) if Y[i]==1)/Np)+(sum(norm(x_s(X[i],s)-Mm(s))**2  for i in range(N) if Y[i]==0)/Nm))
-        #ALGO IRMFSP
-        #calcul des d features les plus interessante
-        d=4
-        def IRMFSP(X,Y,d):
+        
+        def r_s(s):
+            Ms, Mps, Mms = M(s), Mp(s), Mm(s)
+            num = float(Np)/N * norm(Mps - Ms)**2 + float(Nm)/N * norm(Mms - Ms)**2
+            denom1 = sum(norm(x_s(X[i], s) - Mps)**2  for i in range(N) if Y[i]==1)
+            denom2 = sum(norm(x_s(X[i], s) - Mms)**2  for i in range(N) if Y[i]==0)
+            denom = denom1/Np + denom2/Nm
+            return num/denom
+
+        # IRMFSP algorithm
+        # Computes the d most interesting attributes
+        d = 4
+        def IRMFSP(X, Y, d):
             S = set([])
             C = range(len(X[0]))
             j = 0
             base = time.clock()
-            while j<d:
-                print 'j'+str(j)+' '+str(time.clock()-base)
-                s_i = np.argmax(map(r_s, [set([c]) for c in C]))
+            while j < d:
+                s_i = C[np.argmax(map(r_s, [set([c]) for c in C]))]
                 r_i = r_s(set([s_i]))
                 S.add(s_i)
-                if s_i in C: C.remove(s_i)
-                else: sys.exit('IRMFSP : erreur à C prive de s_i')
+                C.remove(s_i)
                 for c in C:
-                    print 'c'+str(c)+' '+str(time.clock()-base)
                     x_c = np.array([xi[c] for xi in X])
                     x_si = np.array([xi[s_i] for xi in X])
                     new_x_c = x_c - np.dot(x_c, x_si)/np.dot(x_si, x_si)*x_si
                     for i in range(len(X)):
-                        print 'i'+str(i)+' '+str(time.clock()-base)
                         X[i][c] = new_x_c[i] 
-                j=j+1
+                j += 1
             return S
         pprint(IRMFSP(X,Y,d))
 
