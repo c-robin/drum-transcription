@@ -17,7 +17,7 @@ def extract_features():
 
     files = get_files('minus-one')
     shuffle(files)
-    files = files[:10]
+    #files = files[:10]
 
     for txt_file, audio_file in files:
         for (start_time, end_time, labels_) in extract_segments(txt_file):

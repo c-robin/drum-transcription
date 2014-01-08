@@ -6,7 +6,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn import cross_validation
 from sklearn.metrics import recall_score, precision_score, f1_score
 from data import extract_features
-from features import normalize, mean, IRMFSP
+from features import normalize, mean, IRMFSP, relevant_features, feature_indices
 from collections import defaultdict
 import numpy as np
 import sys
@@ -49,16 +49,16 @@ gillet = {
 
 taxonomies = {'gillet': gillet, 'super': super_category, 'basic': basic_level, 'sub': sub_category}
 
-if len(sys.argv) != 3:
-    sys.exit('Usage: %s taxonomy classifier' % sys.argv[0])
-_, tax, clf = sys.argv
+if len(sys.argv) != 4:
+    sys.exit('Usage: %s taxonomy classifier selection' % sys.argv[0])
+_, tax, clf, selection = sys.argv
 
 try:
     taxonomy = taxonomies[tax]
 except:
     sys.exit('category must be one of these: %s' % str(list(taxonomies.keys())))
 
-classifiers = ['knn', 'svm', '3svm']
+classifiers = ['knn', 'svm', 'bin_svm', 'bin_knn']
 if clf not in classifiers:
     sys.exit('classifier must be one of these: %s' % str(classifiers))
 
@@ -105,7 +105,19 @@ svm_params = (2, 1)
 #    'Bass drum': (2, 4),
 #}
 
-if clf == '3svm':
+selected_feats = {
+        'Bass drum': [('obsir', 3), ('obsir', 2), ('mfcc', 0), ('mfcc', 10), ('obsir', 4), ('obsir', 1), ('temporal_shape', 0), ('temporal_shape', 3), ('obsir', 5), ('mfcc', 12), ('spectral_shape', 1), ('obsir', 7), ('mfcc', 7), ('spread', 0), ('spectral_shape', 2), ('mfcc', 1)],
+        'Snare drum': [('obsir', 2), ('mfcc', 2), ('spectral_shape', 3), ('spread', 0), ('mfcc', 4), ('lpc', 3), ('lpc', 5), ('obsir', 3), ('flatness', 0), ('spectral_shape', 0), ('mfcc', 0), ('lpc', 0), ('temporal_shape', 2), ('obsir', 7), ('zcr', 0), ('obsir', 4)],
+        'Hi-hat': [('lpc', 0), ('temporal_shape', 2), ('mfcc', 4), ('obsir', 8), ('lpc', 5), ('zcr', 0), ('lpc', 1), ('obsir', 2), ('temporal_shape', 1), ('lpc', 3), ('lpc', 2), ('spectral_shape', 3), ('mfcc', 9), ('mfcc', 10), ('mfcc', 11), ('energy', 0)],
+    }
+
+number_feats = {
+        'Bass drum': 8,
+        'Snare drum': 16,
+        'Hi-hat': 16
+    }
+
+if clf == 'bin_svm' or clf == 'bin_knn':
     x_values = defaultdict(list)
     y_values = defaultdict(list)
     for i, feature in enumerate(features):
@@ -123,20 +135,32 @@ if clf == '3svm':
         X = np.array(x_values[instr])
         Y = np.array(y_values[instr])
 
-        attributes = IRMFSP(X, Y, d=4)
-        print(attributes)
+        if clf == 'bin_svm':
+            d = X.shape[1]
+            C, sigma = svm_params
+            gamma = 1.0 / (2 * d * sigma**2)
+            classifier = SVC(C=C, gamma=gamma)
+        else:
+            classifier = KNeighborsClassifier(n_neighbors=6)
 
-        d = X.shape[1]
-        C, sigma = svm_params
-        gamma = 1.0 / (2 * d * sigma**2)
-        classifier = SVC(C=C, gamma=gamma)
+        if selection == 'default':
+            feats = selected_feats[instr][:number_feats[instr]]
+        elif selection == 'new':
+            feats = relevant_features(X, Y, d=16)
+            print('Selected features for instrument \'%s\': %s' % (instr, str(feats)))
+            feats = feats[:number_feats[instr]]
+       
+        if selection == 'default' or selection == 'new':
+            indices = feature_indices()
+            attributes = map(indices.index, feats)
+            X = np.array([[x[i] for i in attributes] for x in X])
 
         scores = cross_validation.cross_val_score(classifier, X, Y, score_func, cv=10)
         sum_scores[instr] = 100 * mean(scores)
 
 else:
     if clf == 'knn':
-        classifier = KNeighborsClassifier(n_neighbors=3)
+        classifier = KNeighborsClassifier(n_neighbors=6)
     elif clf == 'svm':
         d = features.shape[1]
         C, sigma = svm_params

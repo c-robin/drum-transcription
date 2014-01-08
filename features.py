@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import norm
 
+feature_file = 'features.txt'
+
 def mean(array):
     return sum(array)/len(array)
 def variance(array, mean_):
@@ -38,24 +40,32 @@ class Segment():
             return None
 
         fp = yaafe.FeaturePlan()
-        #fp.loadFeaturePlan('features.txt')
-        fp.loadFeaturePlan('features_reduced.txt')
+        fp.loadFeaturePlan(feature_file)
+        #fp.loadFeaturePlan('features_reduced.txt')
 
         df = fp.getDataFlow()
         engine = yaafe.Engine()
         engine.load(fp.getDataFlow())
-        feats_ = engine.processAudio(np.array([self.frames]))
-     
-        feats = dict()
-        for k, values in feats_.iteritems():
-            mean_ = mean(values)
-            variance_ = variance(values, mean_)
-            feats[k + '_mean'] = mean_
-            feats[k + '_variance'] = variance_
+        feats = engine.processAudio(np.array([self.frames]))
 
-        return np.concatenate((feats['mfcc_mean'], feats['spectral_shape_mean']))
+        attributes = [mean(values) for (k,values) in sorted(feats.items())]
 
+        return np.concatenate(attributes)
 
+def feature_indices():
+    fp = yaafe.FeaturePlan()
+    fp.loadFeaturePlan(feature_file)
+    df = fp.getDataFlow()
+    engine = yaafe.Engine()
+    engine.load(fp.getDataFlow())
+    indices = sorted([(name, feat['size']) for (name, feat) in engine.getOutputs().items()])
+    return sum([[(name, i) for i in range(size)] for (name,size) in indices], [])
+
+def relevant_features(X, Y, d):
+    attributes = IRMFSP(X, Y, d=d)
+    indices = feature_indices()
+    return [indices[i] for i in attributes]
+    
 # IRMFSP algorithm
 # Computes the d most interesting attributes
 def IRMFSP(X, Y, d):
@@ -64,7 +74,7 @@ def IRMFSP(X, Y, d):
     Np = sum(Y)
     Nm = N - Np
 
-    x_s = lambda x,s: np.array([xi for (i, xi) in enumerate(x) if i in s])
+    x_s = lambda x,s: np.array([x[s]])
     Mp = lambda s: sum(x_s(X[i], s) for i in range(N) if Y[i] == 1) / float(Np)
     Mm = lambda s: sum(x_s(X[i], s) for i in range(N) if Y[i] == 0) / float(Nm)
     M = lambda s: sum(x_s(X[i], s) for i in range(N)) / float(N)
@@ -77,13 +87,13 @@ def IRMFSP(X, Y, d):
         denom = denom1/Np + denom2/Nm
         return num / denom
 
-    S = set([])
-    C = range(len(X[0]))
+    S = []
+    C = range(X.shape[1])
 
     for j in range(d):
-        s_i = C[np.argmax(map(r_s, [set([c]) for c in C]))]
-        r_i = r_s(set([s_i]))
-        S.add(s_i)
+        s_i = C[np.argmax(map(r_s, C))]
+        r_i = r_s(s_i)
+        S.append(s_i)
         C.remove(s_i)
         for c in C:
             x_c = np.array([xi[c] for xi in X])
