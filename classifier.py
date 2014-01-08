@@ -5,11 +5,15 @@ from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import cross_validation
 from sklearn.metrics import recall_score, precision_score, f1_score
+from sklearn.hmm import GaussianHMM
 from data import extract_features
 from features import normalize, mean
 from collections import defaultdict
+from numpy.linalg import norm
 import numpy as np
 import sys
+from pprint import pprint
+
 
 # Tree levels of taxonomies, with 95% coverage
 super_category = {
@@ -58,7 +62,7 @@ try:
 except:
     sys.exit('category must be one of these: %s' % str(list(taxonomies.keys())))
 
-classifiers = ['knn', 'svm', '3svm']
+classifiers = ['knn', 'svm', '3svm','hmm']
 if clf not in classifiers:
     sys.exit('classifier must be one of these: %s' % str(classifiers))
 
@@ -122,7 +126,37 @@ if clf == '3svm':
     for instr in x_values:
         X = np.array(x_values[instr])
         Y = np.array(y_values[instr])
+        
+        #MERDE DE CHARLES
+        N = len(Y)
+        Np = sum(Y)
+        Nm = len(Y)-Np
 
+        x_s = lambda x,s: np.array([xi for (i,xi) in enumerate(x) if i in s])
+        Mp = lambda s: sum(x_s(X[i],s) for i in range(N) if Y[i]==1)/Np
+        Mm = lambda s: sum(x_s(X[i],s) for i in range(N) if Y[i]==0)/Nm
+        M = lambda s: sum(x_s(X[i],s) for i in range(N))/N
+        r_s = lambda s: (Np/N*norm(Mp(S)-M(s))**2 + Nm/N*norm(Mm(s)-M(s))**2)/((sum(norm(x_s(X[i],s)-Mp(s))**2  for i in range(N) if Y[i]==1)/Np)+(sum(norm(x_s(X[i],s)-Mm(s))**2  for i in range(N) if Y[i]==0)/Nm))
+        #ALGO IRMFSP
+        #calcul des d features les plus interessante
+        d=4
+        def IRMFSP(X,Y,d):
+            S = set([])
+            C = range(Y)
+            i = 0
+            while i<d:
+                s_i = np.argmax(map(r_s,C))
+                r_i = r_s(s_i)
+                S.add(s_i)
+                if s_i in C: C.remove(s_i)
+                else: sys.exit('IRMFSP : erreur à C prive de s_i')
+                for c in C:
+                   i=i 
+                i=i+1
+            return S,d
+
+
+        #FIN MERDE DE CHARLES
         d = X.shape[1]
         C, sigma = svm_params
         gamma = 1.0/(2*d*sigma**2)
@@ -130,6 +164,17 @@ if clf == '3svm':
 
         scores = cross_validation.cross_val_score(classifier, X, Y, score_func, cv=10)
         sum_scores[instr] = 100*mean(scores)
+elif clf == 'hmm':
+    pprint.pprint(features)
+    pprint.pprint(labels)
+    X = np.column_stack([features,labels])
+    classifier = GaussianHMM(len(taxonomy), covariance_type="diag", n_iter=1000)
+    classifier.fit(features)
+
+    def score_func(y_true, y_pred):
+        return  classifier.predict(y_true)
+
+    scores = cross_validation.cross_val_score(classifier, features, labels, score_func, cv=10)
 else:
     if clf == 'knn':
         classifier = KNeighborsClassifier(n_neighbors=3)
