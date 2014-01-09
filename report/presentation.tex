@@ -26,9 +26,10 @@
     \end{frame}
 
     \section{Introduction}    
+    \subsection{Database}
     \begin{frame}
-        \frametitle{Introduction}
-        \emph{ENST-Drums}: \emph{30 Go} of drum audio and video sequences, played by three different drummers on their own drum kit.
+        \frametitle{Database}
+        \emph{ENST-Drums:} \emph{10 Go} of drum audio and video sequences, played by three different drummers on their own drum kit.
         \vspace*{0.5cm}
        
         Four types of sequence: \emph{hits}, \emph{phrases}, \emph{soli}, \emph{accompaniment}. All sequences are annoted, with the time of each stroke and the corresponding instrument.
@@ -36,7 +37,14 @@
 
         Possible instruments: snare drum, bass drum, cymbals (chinese ride, crash, splash, etc.), hi-hat, toms (low tom, mid tom, etc.)
     \end{frame}
+    \begin{frame}
+        \frametitle{Drum kit}
+        \begin{center}
+            \includegraphics[scale=0.35]{drum-kit.jpg}
+        \end{center}
+    \end{frame}
 
+    \subsection{Exercise}
     \begin{frame}
         \frametitle{Exercise}
         Different possible classification tasks:
@@ -59,6 +67,7 @@
             \item \emph{Sub-category}: like \emph{basic-level}, but toms are subdivised into low tom, low mid tom, etc., cymbals into splash, ride and crash cymbals.
         \end{itemize}
     \end{frame}
+    \subsection{Bibliography}
     \begin{frame}
         \frametitle{Bibliography}
         \footnotesize 
@@ -67,8 +76,9 @@
         \bibliography{presentation}
         \normalsize
     \end{frame}
+    \subsection{Overview}
     \begin{frame}
-        \frametitle{Summary}
+        \frametitle{Overview}
         \begin{enumerate}
             \item Data segmentation
             \item Feature extraction
@@ -78,6 +88,8 @@
         \end{enumerate}
     \end{frame}
     
+    \section{Features}
+    \subsection{Data segmentation}
     \begin{frame}
         \frametitle{Data segmentation}
         Audio records are sequences of strokes. We must extract those strokes.
@@ -87,11 +99,12 @@
             \item We decided that instruments that are played within the same window of 50 ms belong to the same segment.
         \end{itemize}
     \end{frame}
-    \section{Features}
     \subsection{Feature extraction}
     \begin{frame}
         \frametitle{Feature computation}
-        %As suggested by Gillet et al. in \cite{Gillet04}, we used the following features:
+        \begin{center}
+            \includegraphics[scale=0.7]{segmentation.png}
+        \end{center}
         We used \emph{Yaafe} to compute the features of each audio segment. For each of those features we compute the mean value, with an analysis window of 50 ms, and 50\% overlap.
     \end{frame}
     \begin{frame}
@@ -134,7 +147,7 @@ Perceptual spread&PerceptualSpread&1\\
     \end{frame}
     \subsection{Feature selection}
     \begin{frame}
-        \frametitle{Feature selection: IRMFSP}
+        \frametitle{Feature selection}
         We used the algorithm \emph{IRMFSP}. Get the attributes that have the maximum inter-classes distance, and minimum intra-class distance. Feature selection is a dimensionality reduction.
         \begin{center}
         \begin{table}
@@ -154,8 +167,9 @@ Perceptual spread&PerceptualSpread&1\\
         \end{center}
     \end{frame}
     \section{Classification}
+    \subsection{Classification task}
     \begin{frame}
-        \frametitle{Classification}
+        \frametitle{Classification task}
         Given a taxonomy with $N$ instruments, determine for each of the instruments, whether it is played in the audio segment or not.
         There are two approaches:
         \begin{itemize}
@@ -163,6 +177,7 @@ Perceptual spread&PerceptualSpread&1\\
             \item $N$ binary classifiers, which decide if the instrument is played or not.
         \end{itemize}
     \end{frame}
+    \subsection{Evaluation protocol}
     \begin{frame}
         \frametitle{Evaluation protocol}
         For both approaches, we tried two classifiers:
@@ -179,6 +194,7 @@ Perceptual spread&PerceptualSpread&1\\
         $recall=\frac{correct}{true}$,
         $f1=\frac{2\times P\times R}{P+R}$
     \end{frame}
+    \subsection{Results}
     \begin{frame}
         \frametitle{Results}
         Results for SVM, with \emph{manual} features:
@@ -324,7 +340,6 @@ Perceptual spread&PerceptualSpread&1\\
         \end{tabular}
     \end{frame}
     \section{Conclusion}
-
     \begin{frame}
         \frametitle{Remarks}
         In Gillet's thesis, $F1=69.8\%$.
