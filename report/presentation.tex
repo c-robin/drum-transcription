@@ -50,9 +50,11 @@
     \end{frame}
     \begin{frame}
         \frametitle{Our goal}
-        We tried three classification tasks: recognize the instrument type within three categories.
+        We tried several classification tasks, using audio features. The goal is to recognize the instrument type within four taxonomies.
         \begin{itemize}
+
             \item \emph{Super-category}: membrane, plate
+            \item \emph{Gillet's taxonomy}: bass drum, snare drum, hi-hat (75\% coverage)
             \item \emph{Basic-level}: bass drum, snare drum, tom, cymbal, hi-hat
             \item \emph{Sub-category}: like \emph{basic-level}, but toms are subdivised into low tom, low mid tom, etc., cymbals into splash, ride and crash cymbals.
         \end{itemize}
@@ -66,182 +68,275 @@
         \normalsize
     \end{frame}
     \begin{frame}
-        \frametitle{Whole process}
+        \frametitle{Summary}
         \begin{enumerate}
-            \item Data selection
-            \item Data segmentation (extraction of strokes out of the sequences)
-            \item Features extraction (convert audio segments into vectors)
-            \item Normalization of the attributes
-            \item Training of a classifier (on the training data)
-            \item Evaluation of the classifier
+            \item Data segmentation
+            \item Feature extraction
+            \item Feature selection
+            \item Classification
+            \item Results and conclusion
         \end{enumerate}
     \end{frame}
     
     \begin{frame}
         \frametitle{Data segmentation}
-        Audio records are sequences of strokes. We must extract those strokes. The first step is to detect the beginning of each stroke.
-        This process is called \emph{onset detection}. We use the time defined in the annotations as an oracle.
-        \vspace*{0.5cm}
-        
-        Then, we must define a segment size. It could be either a fixed window (e.g. 200 ms) or the whole audio sequence until the next stroke.
-    \end{frame}
-    \section{Feature extraction}
-    \begin{frame}
-        \frametitle{Feature selection}
-    \end{frame}
-    \begin{frame}
-        \frametitle{Chosen features}
-        As suggested by Gillet et al. in \cite{Gillet04}, we used the following features:
+        Audio records are sequences of strokes. We must extract those strokes.
         \begin{itemize}
-            \item Means of 13 MFCC coefficients (starting by $c_0$), using an analysis window of 50 ms and a 50\% overlap.
-            \item 4 spectral shape parameters: spectral centroïd, width, skewness and kurtosis; defined as \emph{SpectralShapeStatistics} in Yaafe.
-            \item Log-energy in 6 frequency bands (chosen accordingly to the frequency content of each instrument)
+            \item Detect the beginning of each stroke. This process is called \emph{onset detection}. In our case, we use the time defined in the annotations as an oracle.
+            \item Define a segment size. It could be either a fixed window (e.g. 200 ms) or the whole audio signal until the next stroke.
+            \item We decided that instruments that are played within the same window of 50 ms belong to the same segment.
         \end{itemize}
-
+    \end{frame}
+    \section{Features}
+    \subsection{Feature extraction}
+    \begin{frame}
+        \frametitle{Feature computation}
+        %As suggested by Gillet et al. in \cite{Gillet04}, we used the following features:
+        We used \emph{Yaafe} to compute the features of each audio segment. For each of those features we compute the mean value, with an analysis window of 50 ms, and 50\% overlap.
+    \end{frame}
+    \begin{frame}
+        \frametitle{Feature list}
+        \footnotesize 
+        \begin{center}
+        \begin{tabular}{|c|c|c|}
+\hline
+Feature&Yaafe name&Dimension\\
+\hline
+Mel Frequency Cepstrum Coef&MFCC&13\\
+\hline
+Spectral shape parameters&SpectralShapeStatistics&4\\
+\hline
+Temporal shape parameters&TemporalShapeStatistics&4\\
+\hline
+Energy ratio in octave frequency bands&OBSIR&9\\
+\hline
+Total energy&Energy&1\\
+\hline
+Zero crossing rate&ZCR&1\\
+\hline
+Linear prediction coefficients&LPC&6\\
+\hline
+Spectral flatness&SpectralFlatness&1\\
+\hline
+Perceptual sharpness&PerceptualSharpness&1\\
+\hline
+Perceptual spread&PerceptualSpread&1\\
+\hline
+\end{tabular}
+\end{center}
+        \normalsize
+        We used 3 sets of features : all features (\emph{all}), manually chosen features: mfcc and spectral shape parameters (\emph{manual}), and automatically selected features (\emph{auto}).
+        %\begin{itemize}
+        %    \item Means of 13 MFCC coefficients (starting by $c_0$).
+        %    \item 4 spectral shape parameters: spectral centroïd, width, skewness and kurtosis; defined as \emph{SpectralShapeStatistics} in Yaafe.
+        %    \item 
+        %\end{itemize}
+    \end{frame}
+    \subsection{Feature selection}
+    \begin{frame}
+        \frametitle{Feature selection: IRMFSP}
+        We used the algorithm \emph{IRMFSP}. Get the attributes that have the maximum inter-classes distance, and minimum intra-class distance. Feature selection is a dimensionality reduction.
+        \begin{center}
+        \begin{table}
+        \caption{First 4 selected attributes}
+        \begin{tabular}{|c|c|}
+        \hline
+        Instrument&Attributes\\
+        \hline
+        Bass drum&$OBSIR_3$, $OBSIR_2$, $MFCC_0$, $MFCC_1$\\
+        \hline
+        Snare drum&$OBSIR_2$, $MFCC_2$, $SpecShape_3$, $Spread_0$\\
+        \hline
+        Hi-hat&$LPC_0$, $TempShape_2$, $MFCC_4$, $OBSIR_8$\\
+        \hline
+        \end{tabular}
+        \end{table}
+        \end{center}
     \end{frame}
     \section{Classification}
     \begin{frame}
         \frametitle{Classification}
-        Herrera et al. use a k-NN, Gillet et al. prefer a SVM. We tried both of them.
-        Evaluation protocol: for each instrument, we measure its precision and recall. We used cross-validation, with 10 folds.
-
+        Given a taxonomy with $N$ instruments, determine for each of the instruments, whether it is played in the audio segment or not.
+        There are two approaches:
+        \begin{itemize}
+            \item A single classifier, with $2^N$ classes (one class for each combination of instruments.)
+            \item $N$ binary classifiers, which decide if the instrument is played or not.
+        \end{itemize}
+    \end{frame}
+    \begin{frame}
+        \frametitle{Evaluation protocol}
+        For both approaches, we tried two classifiers:
+        \begin{itemize}
+            \item SVM classifier (with RBF kernel) as \emph{Gillet} proposed
+            \item K-NN classifier, like \emph{Herrera}, with $k=5$
+        \end{itemize}
+      
+        We used a 10-folds cross-validation.
+        We reported, the \emph{precision}, \emph{recall} and \emph{f-score} for each instrument.
+        \vspace{0.5cm}
+        
+        $precision=\frac{correct}{predicted}$,
+        $recall=\frac{correct}{true}$,
+        $f1=\frac{2\times P\times R}{P+R}$
+    \end{frame}
+    \begin{frame}
+        \frametitle{Results}
+        Results for SVM, with \emph{manual} features:
         \begin{center}
-
-3 SVM (C=2, $\sigma$=1, 10 folds)
-\begin{tabular}{|c|c|c|c|}
-\hline
-Instrument&Precision&Recall&F-measure\\
-\hline
-Bass drum&90.6\%&76.1\%&82.7\%\\
-\hline
-Snare drum&92.8\%&82.6\%&87.4\%\\
-\hline
-Hi-hat&84.7\%&94.1\%&89.2\%\\
-\hline
-Average&89.4\%&84.3\%&86.4\%\\
-\hline
-\end{tabular}
-
-%SVM (C=2, $\sigma$=1, 10 folds)
-%\begin{tabular}{|c|c|c|c|}
-%\hline
-%Instrument&Precision&Recall&F-measure\\
-%\hline
-%Bass drum&91.4\%&74.1\%&81.9\%\\
-%\hline
-%Snare drum&93.0\%&79.6\%&85.8\%\\
-%\hline
-%Hi-hat&84.7\%&93.2\%&88.8\%\\
-%\hline
-%Average&89.7\%&82.3\%&85.5\%\\
-%\hline
-%\end{tabular}
-%
-%K-NN (k=3, 10 folds)
-%\begin{tabular}{|c|c|c|c|}
-%\hline
-%Instrument&Precision&Recall&F-measure\\
-%\hline
-%Bass drum&75.3\%&84.7\%&79.7\%\\
-%\hline
-%Snare drum&87.0\%&83.5\%&85.2\%\\
-%\hline
-%Hi-hat&83.8\%&89.5\%&86.6\%\\
-%\hline
-%Average&82.0\%&85.9\%&83.8\%\\
-%\hline
-%\end{tabular}
-%
-%Basic-level, SVM (C=2, $\sigma$=1, 10 folds)
-%\begin{tabular}{|c|c|c|c|}
-%\hline
-%Instrument&Precision&Recall&F-measure\\
-%\hline
-%Cymbal&87.5\%&50.9\%&64.3\%\\
-%\hline
-%Bass drum&89.5\%&73.4\%&80.7\%\\
-%\hline
-%Snare drum&90.6\%&81.6\%&85.9\%\\
-%\hline
-%Tom&90.8\%&33.0\%&48.3\%\\
-%\hline
-%Hi-hat&79.9\%&89.9\%&84.6\%\\
-%\hline
-%Average&87.7\%&65.8\%&72.7\%\\
-%\hline
-%\end{tabular}
-%
-%Basic-level, 3 SVM (C=2, $\sigma$=1, 10 folds)
-%\begin{tabular}{|c|c|c|c|}
-%\hline
-%Instrument&Precision&Recall&F-measure\\
-%\hline
-%Cymbal&85.3\%&61.2\%&71.2\%\\
-%\hline
-%Bass drum&88.3\%&77.5\%&82.5\%\\
-%\hline
-%Snare drum&91.3\%&82.8\%&86.8\%\\
-%\hline
-%Tom&88.1\%&40.7\%&55.4\%\\
-%\hline
-%Hi-hat&85.0\%&87.4\%&86.2\%\\
-%\hline
-%Average&87.6\%&69.9\%&76.4\%\\
-%\hline
-%\end{tabular}
-%
-%Sub-category, SVM (C=2, $\sigma$=1, 10 folds)
-%\begin{tabular}{|c|c|c|c|}
-%\hline
-%Instrument&Precision&Recall&F-measure\\
-%\hline
-%Splash cymbal&80.0\%&0.0\%&0.0\%\\
-%\hline
-%Low tom&74.7\%&18.7\%&29.5\%\\
-%\hline
-%Low mid tom&60.0\%&27.7\%&35.5\%\\
-%\hline
-%Other cymbal&88.8\%&37.0\%&51.9\%\\
-%\hline
-%Ride cymbal&83.3\%&42.8\%&56.4\%\\
-%\hline
-%Closed hi-hat&69.8\%&85.7\%&76.9\%\\
-%\hline
-%Open hi-hat&82.5\%&61.0\%&70.1\%\\
-%\hline
-%Mid tom&69.1\%&21.8\%&32.9\%\\
-%\hline
-%Bass drum&89.8\%&71.6\%&79.6\%\\
-%\hline
-%Snare drum&88.8\%&83.7\%&86.2\%\\
-%\hline
-%Lowest tom&97.5\%&25.1\%&37.8\%\\
-%\hline
-%Crash cymbal&91.7\%&57.5\%&70.4\%\\
-%\hline
-%Average&81.3\%&44.4\%&52.3\%\\
-%\hline
-%\end{tabular}
+        \footnotesize 
+        \begin{table}
+        \parbox{.50\linewidth}{       
+        \caption{SVM (C=2, $\sigma$=1)}
+        \begin{tabular}{|c|c|c|c|}
+        \hline
+        Instrument&Precision&Recall&F1\\
+        \hline
+        Bass drum&91.4\%&74.1\%&81.9\%\\
+        \hline
+        Snare drum&93.0\%&79.6\%&85.8\%\\
+        \hline
+        Hi-hat&84.7\%&93.2\%&88.8\%\\
+        \hline
+        Average&89.7\%&82.3\%&85.5\%\\
+        \hline
+        \end{tabular}
+        }
+        \hfill
+        \parbox{.40\linewidth}{
+        \caption{3 SVM (C=2, $\sigma$=1)}
+        \begin{tabular}{|c|c|c|}
+        \hline
+        Precision&Recall&F1\\
+        \hline
+        90.6\%&76.1\%&82.7\%\\
+        \hline
+        92.8\%&82.6\%&87.4\%\\
+        \hline
+        84.7\%&94.1\%&89.2\%\\
+        \hline
+        89.4\%&84.3\%&86.4\%\\
+        \hline
+        \end{tabular}
+        }
+        \end{table}
 
         \end{center}
     \end{frame}
-
+    
+    \begin{frame}
+        \frametitle{Results}
+        Results for binary SVM and K-NN, with \emph{all} features:
+                \begin{center}
+        \footnotesize 
+        \begin{table}
+        \parbox{.50\linewidth}{       
+        \caption{3 K-NN (K=5)}
+        \begin{tabular}{|c|c|c|c|}
+        \hline
+        Instrument&Precision&Recall&F1\\
+        \hline
+        Bass drum&88.5\%&84.9\%&86.6\%\\
+        \hline
+        Snare drum&91.9\%&90.8\%&91.3\%\\
+        \hline
+        Hi-hat&91.6\%&92.7\%&92.1\%\\
+        \hline
+        Average&90.7\%&89.5\%&90.0\%\\
+        \hline
+        \end{tabular}
+        }
+        \hfill
+        \parbox{.40\linewidth}{
+        \caption{3 SVM (C=2, $\sigma$=1)}
+        \begin{tabular}{|c|c|c|}
+        \hline
+        Precision&Recall&F1\\
+        \hline
+        93.4\%&75.9\%&83.7\%\\
+        \hline
+        95.5\%&82.3\%&88.4\%\\
+        \hline
+        84.6\%&97.1\%&90.4\%\\
+        \hline
+        91.2\%&85.1\%&87.5\%\\
+        \hline
+        \end{tabular}
+        }
+        \end{table}  
+        \end{center}
+    \end{frame}
+    
+    \begin{frame}
+        \frametitle{Results}
+        Results for binary SVM, with \emph{all} and \emph{auto} features:
+                \begin{center}
+                \footnotesize 
+        \begin{table}
+        \parbox{.50\linewidth}{       
+        \caption{3 SVM (\emph{auto})}
+        \begin{tabular}{|c|c|c|c|}
+        \hline
+        Instrument&Precision&Recall&F1\\
+        \hline
+        Bass drum&86.6\%&86.2\%&86.4\%\\
+        \hline
+        Snare drum&90.6\%&86.3\%&88.4\%\\
+        \hline
+        Hi-hat&82.4\%&94.4\%&88.0\%\\
+        \hline
+        Average&86.5\%&89.0\%&87.6\%\\
+        \hline
+        \end{tabular}
+        }
+        \hfill
+        \parbox{.40\linewidth}{
+        \caption{3 SVM (\emph{all})}
+        \begin{tabular}{|c|c|c|}
+        \hline
+        Precision&Recall&F1\\
+        \hline
+        93.4\%&75.9\%&83.7\%\\
+        \hline
+        95.5\%&82.3\%&88.4\%\\
+        \hline
+        84.6\%&97.1\%&90.4\%\\
+        \hline
+        91.2\%&85.1\%&87.5\%\\
+        \hline
+        \end{tabular}
+        }
+        \end{table}
+        \end{center}
+    \end{frame}
+    \begin{frame}
+        \frametitle{Results}
+        Average results for SVM, with \emph{manual} features:
+        \begin{tabular}{|c|c|c|c|}
+        \hline
+        Taxonomy&Precision&Recall&F1\\
+        \hline
+        Gillet(N=3)&89.7\%&82.3\%&85.5\%\\
+        \hline
+        Basic-level(N=5)&87.7\%&65.8\%&72.7\%\\
+        \hline
+        Sub-category(N=12)&81.3\%&44.4\%&52.3\%\\
+        \hline
+        \end{tabular}
+    \end{frame}
     \section{Conclusion}
 
     \begin{frame}
         \frametitle{Remarks}
-        Good results, because we skipped the \emph{onset detection} step by using an oracle.
-
-        There is room for improvement: feature selection, parameters tuning, etc. We didn't evaluate our system on noisy data.
-    \end{frame}
-   
-    \section{}
-    \begin{frame}
-        \frametitle{~}
-
-        \begin{center}
-            Thank you for listening.
-            \underline{Questions?}
-        \end{center}
+        In Gillet's thesis, $F1=69.8\%$.
+        Our results are comparatively good, because we skipped the \emph{onset detection} step by using an oracle, and our evaluation protocol is less strict.
+        \vspace{0.5cm}
+        
+        There is room for improvement:
+        \begin{itemize}
+        \item Better feature selection
+        \item Parameters tuning
+        \item Different type of classifier for each instrument
+        \item Use video features.
+        \end{itemize}
     \end{frame}
 \end{document}

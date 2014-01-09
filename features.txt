@@ -6,7 +6,6 @@ flatness: SpectralFlatness blockSize=2048 stepSize=1024
 sharpness: PerceptualSharpness blockSize=2048 stepSize=1024
 spread: PerceptualSpread blockSize=2048 stepSize=1024
 lpc: LPC LPCNbCoeffs=6 blockSize=2048 stepSize=1024
-rolloff: SpectralRolloff blockSize=2048 stepSize=1024
 temporal_shape: TemporalShapeStatistics blockSize=2048 stepSize=1024
 obsir: OBSIR blockSize=2048 stepSize=1024
 
