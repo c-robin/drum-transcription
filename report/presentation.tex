@@ -37,6 +37,7 @@
 
         Possible instruments: snare drum, bass drum, cymbals (chinese ride, crash, splash, etc.), hi-hat, toms (low tom, mid tom, etc.)
     \end{frame}
+    
     \begin{frame}
         \frametitle{Drum kit}
         \begin{center}
@@ -52,38 +53,40 @@
             \item Recognize the drummer;
             \item Recognize the tool used to hit (stick, brush, mallet);
             \item The instrument that is hit (snare drum, bass drum, etc.);
-            \item Or a higher-level category of instrument (e.g. membranes versus plates).
+            \item Or a higher-level category of instrument, or \emph{taxonomy} (e.g. membranes versus plates).
         \end{itemize}
         We could use audio features, video features, or both of them.
     \end{frame}
+    
     \begin{frame}
         \frametitle{Our goal}
-        We tried several classification tasks, using audio features. The goal is to recognize the instrument type within four taxonomies.
+        We use only audio features. The classification task we have chosen is to recognize the instrument within a \emph{taxonomy}. We worked with four taxonomies:
         \begin{itemize}
 
-            \item \emph{Super-category}: membrane, plate
-            \item \emph{Gillet's taxonomy}: bass drum, snare drum, hi-hat (75\% coverage)
-            \item \emph{Basic-level}: bass drum, snare drum, tom, cymbal, hi-hat
-            \item \emph{Sub-category}: like \emph{basic-level}, but toms are subdivised into low tom, low mid tom, etc., cymbals into splash, ride and crash cymbals.
+            \item \emph{Super-category:} membrane, plate.
+            \item \emph{Gillet's taxonomy:} bass drum, snare drum, hi-hat (75\% coverage.)
+            \item \emph{Basic-level:} bass drum, snare drum, tom, cymbal, hi-hat.
+            \item \emph{Sub-category:} like \emph{basic-level}, but toms are subdivised into low tom, low mid tom, etc., cymbals into splash, ride and crash cymbals.
         \end{itemize}
     \end{frame}
+    
     \subsection{Bibliography}
     \begin{frame}
         \frametitle{Bibliography}
-        \footnotesize 
+        {\fontsize{0.8em}{1em}
         \nocite{*}
         \bibliographystyle{plain}
-        \bibliography{presentation}
-        \normalsize
+        \bibliography{presentation}}
     \end{frame}
+
     \subsection{Overview}
     \begin{frame}
         \frametitle{Overview}
         \begin{enumerate}
-            \item Data segmentation
-            \item Feature extraction
-            \item Feature selection
-            \item Classification
+            \item Data segmentation (separation of audio sequences into segments)
+            \item Feature extraction (transform an audio segment to a vector)
+            \item Feature selection (keep the best attributes)
+            \item Classification (transcription)
             \item Results and conclusion
         \end{enumerate}
     \end{frame}
@@ -92,10 +95,10 @@
     \subsection{Data segmentation}
     \begin{frame}
         \frametitle{Data segmentation}
-        Audio records are sequences of strokes. We must extract those strokes.
+        Audio records are sequences of strokes. We must extract those strokes by:
         \begin{itemize}
-            \item Detect the beginning of each stroke. This process is called \emph{onset detection}. In our case, we use the time defined in the annotations as an oracle.
-            \item Define a segment size. It could be either a fixed window (e.g. 200 ms) or the whole audio signal until the next stroke.
+            \item Detecting the beginning of each stroke. This process is called \emph{onset detection}. In our case, we use the time defined in the annotations as an oracle.
+            \item And defining a segment size. It could be either a fixed window (e.g. 200 ms) or the rest of the audio signal until the next stroke.
             \item We decided that instruments that are played within the same window of 50 ms belong to the same segment.
         \end{itemize}
     \end{frame}
@@ -111,9 +114,9 @@
         \frametitle{Feature list}
         \footnotesize 
         \begin{center}
-        \begin{tabular}{|c|c|c|}
+        \begin{tabular}{|l|l|c|}
 \hline
-Feature&Yaafe name&Dimension\\
+Feature&Yaafe name&Dim\\
 \hline
 Mel Frequency Cepstrum Coef&MFCC&13\\
 \hline
@@ -138,7 +141,7 @@ Perceptual spread&PerceptualSpread&1\\
 \end{tabular}
 \end{center}
         \normalsize
-        We used 3 sets of features : all features (\emph{all}), manually chosen features: mfcc and spectral shape parameters (\emph{manual}), and automatically selected features (\emph{auto}).
+        We used three sets of features : \emph{all features}, \emph{manually chosen features} (MFCC and Spectral shape), and \emph{automatically selected features} (by feature selection).
         %\begin{itemize}
         %    \item Means of 13 MFCC coefficients (starting by $c_0$).
         %    \item 4 spectral shape parameters: spectral centroïd, width, skewness and kurtosis; defined as \emph{SpectralShapeStatistics} in Yaafe.
@@ -148,7 +151,10 @@ Perceptual spread&PerceptualSpread&1\\
     \subsection{Feature selection}
     \begin{frame}
         \frametitle{Feature selection}
-        We used the algorithm \emph{IRMFSP}. Get the attributes that have the maximum inter-classes distance, and minimum intra-class distance. Feature selection is a dimensionality reduction.
+        Feature selection consists in reducing the dimensionality of the feature vectors, by selecting a smaller number of attributes.
+        \vspace{0.3cm}
+
+        The algorithm \emph{IRMFSP} finds the $d$ best attributes, which maximize the inter-class dispersion, and minimize the intra-class dispersion.
         \begin{center}
         \begin{table}
         \caption{First 4 selected attributes}
@@ -171,6 +177,8 @@ Perceptual spread&PerceptualSpread&1\\
     \begin{frame}
         \frametitle{Classification task}
         Given a taxonomy with $N$ instruments, determine for each of the instruments, whether it is played in the audio segment or not.
+        \vspace{0.3cm}
+
         There are two approaches:
         \begin{itemize}
             \item A single classifier, with $2^N$ classes (one class for each combination of instruments.)
@@ -182,9 +190,10 @@ Perceptual spread&PerceptualSpread&1\\
         \frametitle{Evaluation protocol}
         For both approaches, we tried two classifiers:
         \begin{itemize}
-            \item SVM classifier (with RBF kernel) as \emph{Gillet} proposed
+            \item SVM classifier, as \emph{Gillet} proposed, with RBF kernel ($C=2$, $\sigma=1$) 
             \item K-NN classifier, like \emph{Herrera}, with $k=5$
         \end{itemize}
+        \vspace{0.5cm}
       
         We used a 10-folds cross-validation.
         We reported, the \emph{precision}, \emph{recall} and \emph{f-score} for each instrument.
@@ -197,12 +206,12 @@ Perceptual spread&PerceptualSpread&1\\
     \subsection{Results}
     \begin{frame}
         \frametitle{Results}
-        Results for SVM, with \emph{manual} features:
+        Results for SVM, with \emph{manual features}:
         \begin{center}
         \footnotesize 
         \begin{table}
         \parbox{.50\linewidth}{       
-        \caption{SVM (C=2, $\sigma$=1)}
+        \caption{Single SVM}
         \begin{tabular}{|c|c|c|c|}
         \hline
         Instrument&Precision&Recall&F1\\
@@ -213,13 +222,13 @@ Perceptual spread&PerceptualSpread&1\\
         \hline
         Hi-hat&84.7\%&93.2\%&88.8\%\\
         \hline
-        Average&89.7\%&82.3\%&85.5\%\\
+        Average&89.7\%&82.3\%&\textbf{85.5\%}\\
         \hline
         \end{tabular}
         }
         \hfill
         \parbox{.40\linewidth}{
-        \caption{3 SVM (C=2, $\sigma$=1)}
+        \caption{3 binary SVM}
         \begin{tabular}{|c|c|c|}
         \hline
         Precision&Recall&F1\\
@@ -230,7 +239,7 @@ Perceptual spread&PerceptualSpread&1\\
         \hline
         84.7\%&94.1\%&89.2\%\\
         \hline
-        89.4\%&84.3\%&86.4\%\\
+        89.4\%&84.3\%&\textbf{86.4\%}\\
         \hline
         \end{tabular}
         }
@@ -241,12 +250,12 @@ Perceptual spread&PerceptualSpread&1\\
     
     \begin{frame}
         \frametitle{Results}
-        Results for binary SVM and K-NN, with \emph{all} features:
+        Results for binary SVM and K-NN, with \emph{all features:}
                 \begin{center}
         \footnotesize 
         \begin{table}
         \parbox{.50\linewidth}{       
-        \caption{3 K-NN (K=5)}
+        \caption{3 binary K-NN}
         \begin{tabular}{|c|c|c|c|}
         \hline
         Instrument&Precision&Recall&F1\\
@@ -257,13 +266,13 @@ Perceptual spread&PerceptualSpread&1\\
         \hline
         Hi-hat&91.6\%&92.7\%&92.1\%\\
         \hline
-        Average&90.7\%&89.5\%&90.0\%\\
+        Average&90.7\%&89.5\%&\textbf{90.0\%}\\
         \hline
         \end{tabular}
         }
         \hfill
         \parbox{.40\linewidth}{
-        \caption{3 SVM (C=2, $\sigma$=1)}
+        \caption{3 binary SVM}
         \begin{tabular}{|c|c|c|}
         \hline
         Precision&Recall&F1\\
@@ -274,7 +283,7 @@ Perceptual spread&PerceptualSpread&1\\
         \hline
         84.6\%&97.1\%&90.4\%\\
         \hline
-        91.2\%&85.1\%&87.5\%\\
+        91.2\%&85.1\%&\textbf{87.5\%}\\
         \hline
         \end{tabular}
         }
@@ -284,12 +293,12 @@ Perceptual spread&PerceptualSpread&1\\
     
     \begin{frame}
         \frametitle{Results}
-        Results for binary SVM, with \emph{all} and \emph{auto} features:
+        Results for binary SVM, with \emph{all features} and \emph{auto features:}
                 \begin{center}
                 \footnotesize 
         \begin{table}
         \parbox{.50\linewidth}{       
-        \caption{3 SVM (\emph{auto})}
+            \caption{3 binary SVM \emph{(auto)}}
         \begin{tabular}{|c|c|c|c|}
         \hline
         Instrument&Precision&Recall&F1\\
@@ -300,13 +309,13 @@ Perceptual spread&PerceptualSpread&1\\
         \hline
         Hi-hat&82.4\%&94.4\%&88.0\%\\
         \hline
-        Average&86.5\%&89.0\%&87.6\%\\
+        Average&86.5\%&89.0\%&\textbf{87.6\%}\\
         \hline
         \end{tabular}
         }
         \hfill
         \parbox{.40\linewidth}{
-        \caption{3 SVM (\emph{all})}
+            \caption{3 binary SVM \emph{(all)}}
         \begin{tabular}{|c|c|c|}
         \hline
         Precision&Recall&F1\\
@@ -317,7 +326,7 @@ Perceptual spread&PerceptualSpread&1\\
         \hline
         84.6\%&97.1\%&90.4\%\\
         \hline
-        91.2\%&85.1\%&87.5\%\\
+        91.2\%&85.1\%&\textbf{87.5\%}\\
         \hline
         \end{tabular}
         }
@@ -326,18 +335,20 @@ Perceptual spread&PerceptualSpread&1\\
     \end{frame}
     \begin{frame}
         \frametitle{Results}
-        Average results for SVM, with \emph{manual} features:
+        Average results for single SVM, with \emph{manual features:}
+        \begin{center}
         \begin{tabular}{|c|c|c|c|}
         \hline
         Taxonomy&Precision&Recall&F1\\
         \hline
-        Gillet(N=3)&89.7\%&82.3\%&85.5\%\\
+        Gillet $(N=3)$&89.7\%&82.3\%&\textbf{85.5\%}\\
         \hline
-        Basic-level(N=5)&87.7\%&65.8\%&72.7\%\\
+        Basic-level $(N=5)$&87.7\%&65.8\%&\textbf{72.7\%}\\
         \hline
-        Sub-category(N=12)&81.3\%&44.4\%&52.3\%\\
+        Sub-category $(N=12)$&81.3\%&44.4\%&\textbf{52.3\%}\\
         \hline
         \end{tabular}
+        \end{center}
     \end{frame}
     \section{Conclusion}
     \begin{frame}
@@ -348,10 +359,13 @@ Perceptual spread&PerceptualSpread&1\\
         
         There is room for improvement:
         \begin{itemize}
-        \item Better feature selection
-        \item Parameters tuning
-        \item Different type of classifier for each instrument
+        \item Better feature selection;
+        \item Parameters tuning;
+        \item Different type of classifier for each instrument;
         \item Use video features.
         \end{itemize}
+        \vspace{0.5cm}
+
+        Here is our project's repository, feel free to take a look: \url{https://code.google.com/p/drum-transcription/}
     \end{frame}
 \end{document}
