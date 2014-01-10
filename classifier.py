@@ -48,21 +48,21 @@ gillet = {
 }
 
 taxonomies = {'gillet': gillet, 'super': super_category, 'basic': basic_level, 'sub': sub_category}
-
-if len(sys.argv) != 4:
-    sys.exit('Usage: %s taxonomy classifier selection' % sys.argv[0])
-_, tax, clf, selection = sys.argv
-
-try:
-    taxonomy = taxonomies[tax]
-except:
-    sys.exit('category must be one of these: %s' % str(list(taxonomies.keys())))
-
 classifiers = ['knn', 'svm', 'bin_svm', 'bin_knn']
-if clf not in classifiers:
-    sys.exit('classifier must be one of these: %s' % str(classifiers))
 
-features_, labels_ = extract_features()
+message = """Usage: %s taxonomy classifier features
+taxonomy: 'gillet', 'super', 'basic', 'sub'
+classifier: 'knn', 'svm', 'bin_svm' or 'bin_knn'
+features: 'all', 'reduced', 'auto' (works only with binary classifiers)"""
+try:
+    _, tax, clf, feature_set = sys.argv
+    taxonomy = taxonomies[tax]
+    if clf not in classifiers:
+        raise Exception
+except:
+    sys.exit(message % sys.argv[0])
+
+features_, labels_ = extract_features(feature_set)
 features = []
 labels = []
 
@@ -99,11 +99,6 @@ sum_scores = dict()
 
 # (C, sigma)
 svm_params = (2, 1)
-#params = {
-#    'Hi-hat': (4, 1),
-#    'Snare drum': (2, 2),
-#    'Bass drum': (2, 4),
-#}
 
 selected_feats = {
         'Bass drum': [('obsir', 3), ('obsir', 2), ('mfcc', 0), ('mfcc', 10), ('obsir', 4), ('obsir', 1), ('temporal_shape', 0), ('temporal_shape', 3), ('obsir', 5), ('mfcc', 12), ('spectral_shape', 1), ('obsir', 7), ('mfcc', 7), ('spread', 0), ('spectral_shape', 2), ('mfcc', 1)],
@@ -116,6 +111,15 @@ number_feats = {
         'Snare drum': 16,
         'Hi-hat': 16
     }
+
+if clf in ['bin_svm', 'svm']:
+    d = features.shape[1]
+    C, sigma = svm_params
+    gamma = 1.0 / (2 * d * sigma**2)
+    classifier = SVC(C=C, gamma=gamma)
+else:
+    classifier = KNeighborsClassifier(n_neighbors=5)
+
 
 if clf == 'bin_svm' or clf == 'bin_knn':
     x_values = defaultdict(list)
@@ -135,22 +139,13 @@ if clf == 'bin_svm' or clf == 'bin_knn':
         X = np.array(x_values[instr])
         Y = np.array(y_values[instr])
 
-        if clf == 'bin_svm':
-            d = X.shape[1]
-            C, sigma = svm_params
-            gamma = 1.0 / (2 * d * sigma**2)
-            classifier = SVC(C=C, gamma=gamma)
-        else:
-            classifier = KNeighborsClassifier(n_neighbors=6)
-
-        if selection == 'default':
+        if feature_set == 'auto':
             feats = selected_feats[instr][:number_feats[instr]]
-        elif selection == 'new':
-            feats = relevant_features(X, Y, d=16)
-            print('Selected features for instrument \'%s\': %s' % (instr, str(feats)))
-            feats = feats[:number_feats[instr]]
+            # To do a new feature selection:
+            #feats = relevant_features(X, Y, d=16)
+            #print('Selected features for instrument \'%s\': %s' % (instr, str(feats)))
+            #feats = feats[:number_feats[instr]]
        
-        if selection == 'default' or selection == 'new':
             indices = feature_indices()
             attributes = map(indices.index, feats)
             X = np.array([[x[i] for i in attributes] for x in X])
@@ -159,14 +154,6 @@ if clf == 'bin_svm' or clf == 'bin_knn':
         sum_scores[instr] = 100 * mean(scores)
 
 else:
-    if clf == 'knn':
-        classifier = KNeighborsClassifier(n_neighbors=6)
-    elif clf == 'svm':
-        d = features.shape[1]
-        C, sigma = svm_params
-        gamma = 1.0/(2*d*sigma**2)
-        classifier = SVC(C=C, gamma=gamma)
-
     def score_func(y_true, y_pred):
         counts = defaultdict(lambda: [0,0,0])
         for i, truth in enumerate(y_true):
@@ -208,8 +195,8 @@ def latex_row(info):
 def wiki_row(info):
    return '|| %s || %.1f%% || %.1f%% || %.1f%% ||\n' % info
 
-latex_table = '\\begin{tabular}{|c|c|c|c|}\n\\hline\nInstrument&Precision&Recall&F-measure\\\\\n\\hline\n'
-wiki_table = '|| Instrument || Precision || Recall || F-measure ||\n'
+#latex_table = '\\begin{tabular}{|c|c|c|c|}\n\\hline\nInstrument&Precision&Recall&F-measure\\\\\n\\hline\n'
+#wiki_table = '|| Instrument || Precision || Recall || F-measure ||\n'
 
 average = np.array([0.0, 0.0, 0.0])
 for instr, values in sum_scores.iteritems():
@@ -218,11 +205,12 @@ for instr, values in sum_scores.iteritems():
 
     print('%s: precision=%.1f%%, recall=%.1f%%, F-measure=%.1f%%' % info)
 
-    latex_table += latex_row(info)
-    wiki_table += wiki_row(info)
+    #latex_table += latex_row(info)
+    #wiki_table += wiki_row(info)
 
-latex_table += latex_row(('Average',) + tuple(average))
-wiki_table += wiki_row(('Average',) + tuple(average))
-latex_table += '\\end{tabular}'
-print('\n' + wiki_table)
-print(latex_table)
+print('Average: precision=%.1f%%, recall=%.1f%%, F-measure=%.1f%%' % tuple(average))
+#latex_table += latex_row(('Average',) + tuple(average))
+#wiki_table += wiki_row(('Average',) + tuple(average))
+#latex_table += '\\end{tabular}'
+#print('\n' + wiki_table)
+#print(latex_table)

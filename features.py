@@ -1,10 +1,14 @@
-import wave, pylab
-import yaafelib as yaafe
+# -*- coding: utf-8 -*-
+
+import wave, pylab, sys
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import norm
 
-feature_file = 'features.txt'
+try:
+    import yaafelib as yaafe
+except:
+    sys.exit('You need to install Yaafe, and load its environnement variables.')
 
 def mean(array):
     return sum(array)/len(array)
@@ -35,13 +39,15 @@ class Segment():
         x_axis = [float(i) / 44100 for i in range(self.width)]
         plt.plot(x_axis, self.frames)
         plt.show()
-    def features(self):
+    def features(self, feature_set):
         if len(self.frames) == 0:
             return None
 
         fp = yaafe.FeaturePlan()
-        fp.loadFeaturePlan(feature_file)
-        #fp.loadFeaturePlan('features_reduced.txt')
+        if feature_set in ['auto', 'all']:
+            fp.loadFeaturePlan('features.txt')
+        else:
+            fp.loadFeaturePlan('features_reduced.txt')
 
         df = fp.getDataFlow()
         engine = yaafe.Engine()
@@ -54,7 +60,7 @@ class Segment():
 
 def feature_indices():
     fp = yaafe.FeaturePlan()
-    fp.loadFeaturePlan(feature_file)
+    fp.loadFeaturePlan('features.txt')
     df = fp.getDataFlow()
     engine = yaafe.Engine()
     engine.load(fp.getDataFlow())

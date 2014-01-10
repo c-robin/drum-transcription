@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from os import path, listdir, getuid
 from features import Segment
 from random import shuffle
@@ -11,18 +13,18 @@ drummers = ['drummer_1', 'drummer_2', 'drummer_3']
 audio_subdir = 'audio/overhead_L'
 txt_subdir = 'annotation'
 
-def extract_features():
+def extract_features(feature_set):
     features = []
     labels = []
 
     files = get_files('minus-one')
     shuffle(files)
-    #files = files[:10]
+    files = files[:1]
 
     for txt_file, audio_file in files:
         for (start_time, end_time, labels_) in extract_segments(txt_file):
             segment = Segment(audio_file, start_time, end_time)
-            feature = segment.features()
+            feature = segment.features(feature_set)
 
             if feature is None:
                 continue
