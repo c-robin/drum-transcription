@@ -64,7 +64,7 @@ Snare drum 	89.8% 	92.7% 	91.2%
 Hi-hat 	89.7% 	94.8% 	92.2%
 Average 	88.5% 	91.7% 	90.1%
 
-For more results, visit this page.
+For more results, visit this [page](https://github.com/c-robin/drum-transcription/wiki/Results).
 
 ## Bibliography
 
