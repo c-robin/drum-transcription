@@ -43,26 +43,29 @@ We try two different classifiers: a SVM classifier with RBF kernel as in (2), an
 ## Results
 
 **Gillet, SVM** (C=2, σ=1)
-Instrument 	Precision 	 Recall 	F-measure
-Bass drum 	91.4% 	74.1% 	81.9%
-Snare drum 	93.0% 	79.6% 	85.8%
-Hi-hat 	84.7% 	93.2% 	88.8%
-Average 	89.7% 	82.3% 	85.5%
+| Instrument | Precision | Recall | F-measure |
+| ---------- | --------- | ------ | --------- |
+| Bass drum  | 91.4%  | 74.1%  | 81.9% |
+| Snare drum  | 93.0%  | 79.6%  | 85.8% |
+| Hi-hat  | 84.7%  | 93.2%  | 88.8%|
+| Average  | 89.7%  | 82.3%  | 85.5% |
 
 **Basic-level, SVM** (C=2, σ=1)
-Instrument 	Precision 	 Recall 	F-measure
-Average 	87.7% 	65.8% 	72.7%
+| Instrument | Precision | Recall | F-measure |
+| ---------- | --------- | ------ | --------- |
+| Average  | 87.7%  | 65.8%  | 72.7% |
 
 **Sub-category, SVM** (C=2, σ=1)
-Instrument 	Precision 	 Recall 	F-measure
-Average 	81.3% 	44.4% 	52.3%
-
+| Instrument | Precision | Recall | F-measure |
+| ---------- | --------- | ------ | --------- |
+| Average  | 81.3%  | 44.4%  | 52.3% | 
 **Gillet, 3 binary K-NN, all features** (k=5)
-Instrument 	Precision 	 Recall 	F-measure
-Bass drum 	86.2% 	87.5% 	86.8%
-Snare drum 	89.8% 	92.7% 	91.2%
-Hi-hat 	89.7% 	94.8% 	92.2%
-Average 	88.5% 	91.7% 	90.1%
+| Instrument | Precision | Recall | F-measure |
+| ---------- | --------- | ------ | --------- |
+| Bass drum  | 86.2%  | 87.5%  | 86.8% |
+| Snare drum  | 89.8%  | 92.7%  | 91.2% |
+| Hi-hat  | 89.7%  | 94.8%  | 92.2% |
+| Average  | 88.5%  | 91.7%  | 90.1% |
 
 For more results, visit this [page](https://github.com/c-robin/drum-transcription/wiki/Results).
 
